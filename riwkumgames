@@ -1,0 +1,54 @@
+import pygame
+import time
+import random
+import sys
+
+# Initialize pygame
+pygame.init()
+
+# Create the game window
+screen = pygame.display.set_mode((800, 600))
+pygame.display.set_caption("CAR RACING")
+
+# Load images (you can replace these with your own)
+c1_img = pygame.image.load("car1.jpg")
+grass = pygame.image.load("grass.jpg")
+y_strip = pygame.image.load("y_strip.jpg")
+strip = pygame.image.load("strip.jpg")
+start = pygame.image.load("start.jpg")
+
+# Function to display background elements
+def background():
+    screen.blit(grass, (0, 0))
+    screen.blit(grass, (700, 0))
+    screen.blit(y_strip, (400, 0))
+    # ... Add more background elements as needed
+
+# Function to display the player's car
+def car(x, y):
+    screen.blit(c1_img, (x, y))
+
+# Other game logic (enemy cars, scoring, etc.) goes here
+
+# Example usage:
+x = 400
+y = 470
+car_width = 56
+
+# Main game loop
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
+    # car color=red
+
+    # Render background and car
+    background()
+    car(x, y)
+
+    pygame.display.update()
+    clock.tick(60)  # Set frame rate
+
+# collision detection, scoring, etc.
