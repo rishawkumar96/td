@@ -11,7 +11,7 @@ from telegram import Update, ChatPermissions
    logger = logging.getLogger(__name__)
 
    # Define your token here
-   TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
+   TOKEN = '7901081162:AAFCI4-88wBS9ZM0tCA5mTUagOt935lzAuk'
 
    locked_items = set()
    lock_warns = True
