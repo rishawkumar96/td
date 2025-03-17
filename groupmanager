@@ -1,0 +1,162 @@
+from telegram import Update, ChatPermissions
+   from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+   import logging
+
+   # Enable logging
+   logging.basicConfig(
+       format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+       level=logging.INFO
+   )
+
+   logger = logging.getLogger(__name__)
+
+   # Define your token here
+   TOKEN = '7901081162:AAFCI4-88wBS9ZM0tCA5mTUagOt935lzAuk'
+
+   locked_items = set()
+   lock_warns = True
+   allowlist = set()
+
+
+   def start(update: Update, context: CallbackContext) -> None:
+       update.message.reply_text('Hello! I am your Kayla a powerful management bot.')
+
+
+   def help_command(update: Update, context: CallbackContext) -> None:
+       update.message.reply_text('Available commands:\n/start - Start the bot\n/help - Show this help message\n'
+                                 '/mute - Mute a user\n/unmute - Unmute a user\n'
+                                 '/kick - Remove a user\n/add - Add a user to the group\n'
+                                 '/remove - Remove a user from the group\n'
+                                 '/welcome - Toggle welcome messages on/off\n'
+                                 '/warn - Warn a user\n/warnings - Check warnings for a user\n'
+                                 '/clearwarnings - Clear warnings for a user\n'
+                                 '/lock - Lock an item\n/unlock - Unlock an item\n'
+                                 '/locks - List currently locked items\n'
+                                 '/lockwarns - Enable/Disable lock warnings\n'
+                                 '/locktypes - Show lockable items\n'
+                                 '/allowlist - Manage allowlist\n/rmallowlist - Remove items from allowlist\n'
+                                 '/rmallowlistall - Clear allowlist')
+
+
+   def lock(update: Update, context: CallbackContext) -> None:
+       items = context.args
+       if not items:
+           update.message.reply_text('Usage: /lock <item(s)>')
+           return
+
+       for item in items:
+           locked_items.add(item)
+       update.message.reply_text(f'Locked items: {", ".join(items)}')
+
+
+   def unlock(update: Update, context: CallbackContext) -> None:
+       items = context.args
+       if not items:
+           update.message.reply_text('Usage: /unlock <item(s)>')
+           return
+
+       for item in items:
+           locked_items.discard(item)
+       update.message.reply_text(f'Unlocked items: {", ".join(items)}')
+
+
+   def locks(update: Update, context: CallbackContext) -> None:
+       if not locked_items:
+           update.message.reply_text('No items are currently locked.')
+       else:
+           update.message.reply_text(f'Currently locked items: {", ".join(locked_items)}')
+
+
+   def lockwarns_command(update: Update, context: CallbackContext) -> None:
+       global lock_warns
+       if len(context.args) != 1 or context.args[0].lower() not in ['yes', 'no', 'on', 'off']:
+           update.message.reply_text('Usage: /lockwarns <yes/no/on/off>')
+           return
+
+       lock_warns = context.args[0].lower() in ['yes', 'on']
+       status = 'enabled' if lock_warns else 'disabled'
+       update.message.reply_text(f'Lock warnings have been {status}.')
+
+
+   def locktypes(update: Update, context: CallbackContext) -> None:
+       update.message.reply_text('Lockable items include: commands, URLs, forwards, invitelinks, inline messages, '
+                                 'external replies, anonymous channels, stickerpacks.')
+
+
+   def allowlist_command(update: Update, context: CallbackContext) -> None:
+       items = context.args
+       if not items:
+           if not allowlist:
+               update.message.reply_text('No items in the allowlist.')
+           else:
+               update.message.reply_text(f'Current allowlist: {", ".join(allowlist)}')
+           return
+
+       for item in items:
+           allowlist.add(item)
+       update.message.reply_text(f'Allowlisted items: {", ".join(items)}')
+
+
+   def rmallowlist(update: Update, context: CallbackContext) -> None:
+       items = context.args
+       if not items:
+           update.message.reply_text('Usage: /rmallowlist <url/id/@channelname(s)>')
+           return
+
+       for item in items:
+           allowlist.discard(item)
+       update.message.reply_text(f'Removed items from allowlist: {", ".join(items)}')
+
+
+   def rmallowlistall(update: Update, context: CallbackContext) -> None:
+       allowlist.clear()
+       update.message.reply_text('Allowlist has been cleared.')
+
+
+   def handle_message(update: Update, context: CallbackContext) -> None:
+       text = update.message.text
+       if any(item in text for item in locked_items) and not allowlist:
+           if lock_warns:
+               update.message.reply_text('This item is locked.')
+           return
+       update.message.reply_text(f'You said: {text}')
+
+
+   def error(update: Update, context: CallbackContext) -> None:
+       """Log Errors caused by Updates."""
+       logger.warning('Update "%s" caused error "%s"', update, context.error)
+
+
+   def main() -> None:
+       updater = Updater(TOKEN)
+       dispatcher = updater.dispatcher
+
+       dispatcher.add_handler(CommandHandler('start', start))
+       dispatcher.add_handler(CommandHandler('help', help_command))
+       dispatcher.add_handler(CommandHandler('mute', mute))
+       dispatcher.add_handler(CommandHandler('unmute', unmute))
+       dispatcher.add_handler(CommandHandler('kick', kick))
+       dispatcher.add_handler(CommandHandler('add', add_user, pass_args=True))
+       dispatcher.add_handler(CommandHandler('remove', remove_user, pass_args=True))
+       dispatcher.add_handler(CommandHandler('welcome', welcome))
+       dispatcher.add_handler(CommandHandler('warn', warn))
+       dispatcher.add_handler(CommandHandler('warnings', warnings_command))
+       dispatcher.add_handler(CommandHandler('clearwarnings', clear_warnings))
+       dispatcher.add_handler(CommandHandler('lock', lock, pass_args=True))
+       dispatcher.add_handler(CommandHandler('unlock', unlock, pass_args=True))
+       dispatcher.add_handler(CommandHandler('locks', locks))
+       dispatcher.add_handler(CommandHandler('lockwarns', lockwarns_command, pass_args=True))
+       dispatcher.add_handler(CommandHandler('locktypes', locktypes))
+       dispatcher.add_handler(CommandHandler('allowlist', allowlist_command, pass_args=True))
+       dispatcher.add_handler(CommandHandler('rmallowlist', rmallowlist, pass_args=True))
+       dispatcher.add_handler(CommandHandler('rmallowlistall', rmallowlistall))
+       dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+
+       dispatcher.add_error_handler(error)
+
+       updater.start_polling()
+       updater.idle()
+
+
+   if __name__ == '__main__':
+       main()
