@@ -19,7 +19,7 @@ from telegram import Update, ChatPermissions
 
 
    def start(update: Update, context: CallbackContext) -> None:
-       update.message.reply_text('Hello! I am your group management bot.')
+       update.message.reply_text('Hello! I am your Kayla a powerful management bot.')
 
 
    def help_command(update: Update, context: CallbackContext) -> None:
